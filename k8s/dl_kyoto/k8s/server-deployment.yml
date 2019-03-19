@@ -1,0 +1,24 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dlkyoto
+  labels:
+    app: dlkyoto
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dlkyoto
+  template:
+    metadata:
+      labels:
+        app: dlkyoto
+    spec:
+      containers:
+      - name: dlkyoto
+        image: tejaschumbalkar/dl_kyoto
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+      nodeSelector:
+        slave: "slave01"
