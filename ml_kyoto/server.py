@@ -7,7 +7,7 @@ import pickle
 app = Flask(__name__)
 
 # Load the model
-model = pickle.load(open('model.pkl','rb'))
+model = pickle.load(open('/app/model.pkl','rb'))
 
 @app.route('/api',methods=['POST'])
 def predict():
@@ -27,4 +27,4 @@ def predict():
     return jsonify(output)
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=True, threaded=True)
+    app.run(host='0.0.0.0',port=7000, debug=True)
