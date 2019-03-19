@@ -12,14 +12,14 @@ app = Flask(__name__)
 
 def init():
     global loaded_model, graph
-    # load the pre-trained Keras model
-    
+
     # Load the model
     json_file = open('nn/model.json', 'r')
     loaded_model_json = json_file.read()
     json_file.close()
 
     loaded_model = model_from_json(loaded_model_json)
+    
     # load weights into new model
     loaded_model.load_weights("nn/model.h5")
      
@@ -28,23 +28,17 @@ def init():
 
     graph = tf.get_default_graph()
 
-
-
 @app.route('/api',methods=['POST'])
 def predict():
     # Get the data from the POST request.
     data = request.get_json(force=True)
     
-    print("Extracting the data")
     # Make prediction using model loaded from disk as per the data.
     load_data = np.asarray(data['exp'])
     
     with graph.as_default():
         prediction = loaded_model.predict_classes(load_data)
     
-    print(prediction)
-    print(type(prediction))
-
     result = np.array(prediction).tolist()
     
     return jsonify(result)
