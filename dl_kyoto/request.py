@@ -9,66 +9,69 @@ import requests
 import json
 import requests
 
-"""
-Kyoto Dataset analysis
-"""
 # Load the Kyoto 2006 Dataset
-kyoto2006 = pd.read_csv('20150101.csv',header=None)
+ky26 = pd.read_csv('20150101.csv',header=None)
+
 # Provide columns for the Kyoto Dataset
-kyoto2006.columns = ['Duration','Service', 'Source bytes','Destination bytes',
+ky26.columns = ['Duration','Service', 'Source bytes','Destination bytes',
               'Count','Same srv rate','Serror rate','Srv serror rate',
               'Dst host count','Dst host srv count','Dst host same src port rate',
               'Dst host serror rate','Dst host srv serror rate','Flag',              
               'Label',
               'Protocol','Start Time']
 
-kyoto2006 = kyoto2006.loc[kyoto2006['Label'] != -2]
-kyoto2006.Label.value_counts()
+# Removing the unknown attacks
+ky26 = ky26.loc[ky26['Label'] != -2]
+
+new_k26 = pd.get_dummies(ky26[['Label','Duration','Source bytes','Destination bytes',
+              'Count','Same srv rate','Serror rate','Srv serror rate',
+              'Dst host count','Dst host srv count','Dst host same src port rate',
+              'Dst host serror rate','Dst host srv serror rate',             
+              'Start Time','Service', 'Flag','Protocol']])
 
 import numpy as np
 from sklearn.utils import shuffle
 
-kyoto2006_b = kyoto2006.loc[kyoto2006['Label'] == 1]
-kyoto2006_m = kyoto2006.loc[kyoto2006['Label'] == -1]
+# Extracting the benign and malicious data respectively
+ky26_b = new_k26.loc[ky26['Label'] == 1]
+ky26_m = new_k26.loc[ky26['Label'] == -1]
 
-train_number = int(len(kyoto2006_b) * 1.0)
-df_balanced_m = kyoto2006_m.take(np.random.permutation(len(kyoto2006_m))[:train_number])
-df_balanced_b = kyoto2006_b
+train_num = int(len(ky26_b) * 1.0)
+
+df_balanced_m = ky26_m.take(np.random.permutation(len(ky26_m))[:train_num])
+df_balanced_b = ky26_b
 
 df_balanced = pd.concat([df_balanced_m, df_balanced_b])
-df_balanced = shuffle(df_balanced)
-df_balanced['Label'] = df_balanced['Label']* (-1)
-df_balanced.Label.value_counts()
 
-df = pd.get_dummies (df_balanced[['Label','Duration','Source bytes','Destination bytes',
-              'Count','Same srv rate','Serror rate','Srv serror rate',
-              'Dst host count','Dst host srv count','Dst host same src port rate',
-              'Dst host serror rate','Dst host srv serror rate',             
-              'Start Time','Service', 'Flag','Protocol']]
-    )
+df_balanced['Label'] = df_balanced['Label'] * (-1)
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import LabelEncoder
 
-X, y = df.iloc[:, 1:].values, df.iloc[:, 0].values
+x, y = df_balanced.iloc[:, 1:].values, df_balanced.iloc[:, 0].values
 
 le = LabelEncoder()
 y = le.fit_transform(y)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1)
 
-url = 'http://localhost:5000/api'
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
 
-for data in X_test:
-    print("{}".format(data.shape))
-    new_data = np.expand_dims(data, 0)
+print("Printing X_train shape: {}".format(x_train.shape))
+print("Printing X_test shape: {}".format(x_test.shape))
+print("Printing y_train shape: {}".format(y_train.shape))
+print("Printing y_test shape: {}".format(y_test.shape))
+
+# # url = 'http://localhost:5000/api'
+
+# # for data in X_test:
+# #     print("{}".format(data.shape))
+# #     new_data = np.expand_dims(data, 0)
     
-    print("After expanding dimensions")
-    print(new_data.shape)
+# #     print("After expanding dimensions")
+# #     print(new_data.shape)
     
-    new_data = np.array(new_data).tolist()
-    print(new_data)
+# #     new_data = np.array(new_data).tolist()
+# #     #print(new_data)
 
-    # r = requests.post(url,json={'exp':new_data})
-    # print(r.json())
-    break
+# #     #r = requests.post(url,json={'exp':new_data})
+# #     #print(r.json())

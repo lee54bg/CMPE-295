@@ -38,10 +38,9 @@ def predict():
     print("Extracting the data")
     # Make prediction using model loaded from disk as per the data.
     load_data = np.asarray(data['exp'])
-    new_data = np.expand_dims(load_data, 0)
     
     with graph.as_default():
-        prediction = loaded_model.predict_classes(new_data)
+        prediction = loaded_model.predict_classes(load_data)
     
     print(prediction)
     print(type(prediction))
