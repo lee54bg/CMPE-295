@@ -52,12 +52,13 @@ from sklearn.preprocessing import LabelEncoder
 
 x, y = processed_data.iloc[:, 1:].values, processed_data.iloc[:, 0].values
 
+# Label encoder the attacks so that it's 1 or 0
 le = LabelEncoder()
 y = le.fit_transform(y)
 
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
 
-# Regular deep learning artificial neural network
+# Regular Deep Learning Artificial Neural Network
 
 import keras
 from keras.models import Sequential
@@ -69,31 +70,21 @@ model.add(Dense(50, input_dim=x.shape[1], kernel_initializer='normal', activatio
 model.add(Dense(10, input_dim=x.shape[1], kernel_initializer='normal', activation='relu'))
 model.add(Dense(1,activation='sigmoid'))
 model.compile(loss='binary_crossentropy', optimizer='adam')
-model.fit(x_train, y_train, validation_data=(x_test,y_test), verbose=2, epochs=2)
+model.fit(x_train, y_train, validation_data=(x_test,y_test), verbose=2, epochs=100)
 
-# for data in x_test:
-#   new_data = np.expand_dims(data, 0)
-#   print(new_data)
-#   print(type(new_data))
-#   y_pred = model.predict_classes(new_data)
-#   print(y_pred)
-#   break
+# # serialize model to JSON
+# model_json = model.to_json()
+# with open("nn/model.json", "w") as json_file:
+#     json_file.write(model_json)
 
-# serialize model to JSON
-model_json = model.to_json()
-with open("nn/model.json", "w") as json_file:
-    json_file.write(model_json)
+# # serialize weights to HDF5
+# model.save_weights("nn/model.h5")
+# print("Saved model to disk")
 
-# serialize weights to HDF5
-model.save_weights("nn/model.h5")
-print("Saved model to disk")
-
-# import keras
-# from keras.models import Sequential
-# from keras.layers.core import Dense, Activation
+# # Basic Autoencoder
 
 # ae = Sequential()
-# ae.add(Dense(21, input_dim=X.shape[1], activation='relu'))
-# ae.add(Dense(X.shape[1], activation='sigmoid'))
-# ae.compile(loss='binary_crossentropy', optimizer='adam')
-# ae.fit(X_train, y_train, validation_data=(X_test,y_test), verbose=2, epochs=50)
+# ae.add(Dense(21, kernel_initializer='normal', activation='relu')(x))
+# ae.add(Dense(42, activation='sigmoid'))
+# ae.compile(loss='mean_squared_error', optimizer='adam')
+# ae.fit(x_train, y_train, validation_data=(x_test,y_test), verbose=2, epochs=50)

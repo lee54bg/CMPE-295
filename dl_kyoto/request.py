@@ -57,11 +57,6 @@ y = le.fit_transform(y)
 
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
 
-print("Printing X_train shape: {}".format(x_train.shape))
-print("Printing X_test shape: {}".format(x_test.shape))
-print("Printing y_train shape: {}".format(y_train.shape))
-print("Printing y_test shape: {}".format(y_test.shape))
-
 url = 'http://localhost:5000/api'
 
 for data in x_test:
