@@ -5,9 +5,7 @@ import datetime
 import hashlib
 import collections
 import requests
-
-
-
+import numpy
 	
 try:
     import Queue as queue
@@ -333,7 +331,6 @@ def check_service(packet):
 
 def basic_function():
 	print("")
-	import numpy as np
 	
 	url = 'http://127.0.0.1:5000/api'
 
@@ -344,7 +341,7 @@ def basic_function():
 			data = data_to_send.get()
 
 			data = np.array(data).tolist()
-			r = request.post(url,json={'exp':data})
+			r = requests.post(url,json={'exp':data})
 
 			print(r.json())
 

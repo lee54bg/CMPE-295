@@ -17,8 +17,16 @@ kyoto2006.columns = ['Duration','Service', 'Source bytes','Destination bytes',
               'Count','Same srv rate','Serror rate','Srv serror rate',
               'Dst host count','Dst host srv count','Dst host same src port rate',
               'Dst host serror rate','Dst host srv serror rate','Flag',              
-              'Label',
-              'Protocol','Start Time']
+              'Label', 'Protocol','Start Time']
+
+df = pd.get_dummies (df_balanced[['Label','Duration','Source bytes','Destination bytes',
+              'Count','Same srv rate','Serror rate','Srv serror rate',
+              'Dst host count','Dst host srv count','Dst host same src port rate',
+              'Dst host serror rate','Dst host srv serror rate',             
+              'Service']]
+    )
+
+kyoto2006.drop(['Start Time', 'Protocol', 'Flag'], axis=1)
 
 kyoto2006 = kyoto2006.loc[kyoto2006['Label'] != -2]
 kyoto2006.Label.value_counts()
@@ -37,14 +45,6 @@ df_balanced = pd.concat([df_balanced_m, df_balanced_b])
 df_balanced = shuffle(df_balanced)
 df_balanced['Label'] = df_balanced['Label']* (-1)
 df_balanced.Label.value_counts()
-
-df = pd.get_dummies (df_balanced[['Label','Duration','Source bytes','Destination bytes',
-              'Count','Same srv rate','Serror rate','Srv serror rate',
-              'Dst host count','Dst host srv count','Dst host same src port rate',
-              'Dst host serror rate','Dst host srv serror rate',             
-              'Start Time','Service', 'Flag','Protocol']]
-    )
-
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
