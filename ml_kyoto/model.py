@@ -19,17 +19,22 @@ kyoto2006.columns = ['Duration','Service', 'Source bytes','Destination bytes',
               'Dst host serror rate','Dst host srv serror rate','Flag',              
               'Label', 'Protocol','Start Time']
 
-df = pd.get_dummies (df_balanced[['Label','Duration','Source bytes','Destination bytes',
+
+kyoto2006.drop(['Start Time', 'Flag'], axis=1)
+
+kyoto2006 = pd.get_dummies (
+    kyoto2006[['Label','Duration','Source bytes','Destination bytes',
               'Count','Same srv rate','Serror rate','Srv serror rate',
               'Dst host count','Dst host srv count','Dst host same src port rate',
               'Dst host serror rate','Dst host srv serror rate',             
-              'Service']]
+              'Service', 'Protocol']]
     )
 
-kyoto2006.drop(['Start Time', 'Protocol', 'Flag'], axis=1)
+# for i, c in enumerate(df):
+    # print(i, c)
+
 
 kyoto2006 = kyoto2006.loc[kyoto2006['Label'] != -2]
-kyoto2006.Label.value_counts()
 
 import numpy as np
 from sklearn.utils import shuffle
@@ -43,21 +48,22 @@ df_balanced_b = kyoto2006_b
 
 df_balanced = pd.concat([df_balanced_m, df_balanced_b])
 df_balanced = shuffle(df_balanced)
-df_balanced['Label'] = df_balanced['Label']* (-1)
-df_balanced.Label.value_counts()
+df_balanced['Label'] = df_balanced['Label'] * (-1)
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import LabelEncoder
 
-X, y = df.iloc[:, 1:].values, df.iloc[:, 0].values
+X, y = df_balanced.iloc[:, 1:].values, df_balanced.iloc[:, 0].values
+
+
+# for i, c in enumerate(df):
+    # print(i, c)
+
 
 le = LabelEncoder()
 y = le.fit_transform(y)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1)
-
-# Result:  <class 'numpy.ndarray'>
-#print(type(X_test))
 
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 
@@ -68,6 +74,9 @@ rfc.fit(X_train, y_train)
 # Saving model to disk
 pickle.dump(rfc, open('model.pkl','wb'))
 print("Model Trained")
+
+
+
 
 # for test_x in X_test:
 #     data = np.array(test_x).reshape(1, -1)

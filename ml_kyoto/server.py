@@ -21,6 +21,7 @@ def predict():
     prediction = model.predict(load_data)
     
     print(prediction)
+
     # Take the first value of prediction
     output = np.array(prediction).tolist()
     

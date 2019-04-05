@@ -334,7 +334,7 @@ def check_service(packet):
 def basic_function():
 	print("")
 	import numpy as np
-	
+
 	url = 'http://127.0.0.1:5000/api'
 
 	while True:

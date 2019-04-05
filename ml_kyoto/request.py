@@ -319,8 +319,8 @@ def extract_tcp_feat(packet):
 # svclist dictionary.  As time goes by, more data can be added
 # to check and support which types of services are available
 def check_service(packet):
-  if TCP in packet:
-    if packet[TCP].dport in svclist:
+    if TCP in packet:
+        if packet[TCP].dport in svclist:
       return svclist[packet[TCP].dport]
     else:
       return "Other"
@@ -332,49 +332,48 @@ def check_service(packet):
       return "Other"
 
 def basic_function():
-  print("")
-  import numpy as np
+    print("")
+    import numpy as np
   
-  url = 'http://127.0.0.1:5000/api'
+    url = 'http://127.0.0.1:5000/api'
 
-  while True:
-    if data_to_send.empty():
-      continue
+    while True:
+        if data_to_send.empty():
+            continue
     else:
-      data = data_to_send.get()
+        data = data_to_send.get()
 
-      data = np.array(data).tolist()
-      r = requests.post(url,json={'exp':data})
+        data = np.array(data).tolist()
+        r = requests.post(url,json={'exp':data})
 
-      print(r.json())
-
+        print(r.json())
 
 if len(sys.argv) == 1:
-  print("Usage: python3 trafclas [Interface]")
-  sys.exit()
+    print("Usage: python3 trafclas [Interface]")
+    sys.exit()
 else:
-  # import csv
+    # import csv
 
-  # with open('Aggregated Data.csv', mode='w') as kyoto_dataset:
-  #   kyoto_writer = csv.writer(kyoto_dataset, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-  #   kyoto_writer.writerow(['John Smith', 'Accounting', 'November'])
-  #   kyoto_writer.writerow(['Erica Meyers', 'IT', 'March'])
+    # with open('Aggregated Data.csv', mode='w') as kyoto_dataset:
+    #   kyoto_writer = csv.writer(kyoto_dataset, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    #   kyoto_writer.writerow(['John Smith', 'Accounting', 'November'])
+    #   kyoto_writer.writerow(['Erica Meyers', 'IT', 'March'])
 
-  iface = sys.argv[1]
-  print("Interface: " + iface)
+    iface = sys.argv[1]
+    print("Interface: " + iface)
 
-  try:
-    global start_time
-    start_time = time.mktime(datetime.datetime.today().timetuple())
+    try:
+        global start_time
+        start_time = time.mktime(datetime.datetime.today().timetuple())
 
-    import threading
+        import threading
   
-    t1 = threading.Thread(target=basic_function)
-    t1.start()
+        t1 = threading.Thread(target=basic_function)
+        t1.start()
 
-    sniff(prn=map_stats, iface=iface)
+        sniff(prn=map_stats, iface=iface)
 
-  except socket.error:
-    print("No such device found.")
-  except KeyboardInterrupt:
-    print("\nTerminating Program...")
+    except socket.error:
+        print("No such device found.")
+    except KeyboardInterrupt:
+        print("\nTerminating Program...")
