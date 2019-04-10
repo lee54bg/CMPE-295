@@ -9,7 +9,6 @@ try:
 except ImportError:
     import queue
 
-
 #initiate variables
 global dic
 global cursvc
@@ -30,7 +29,6 @@ svclist = {
 }
 
 def write_udp_json(packet,writer):
-    print(svclist)
     src = packet[IP].src
     dst = packet[IP].dst
     sprt = packet[UDP].sport
@@ -49,10 +47,8 @@ def write_udp_json(packet,writer):
     synsvcnt=0
     srcport_count=0
     
-    
-    #check for unique connections
+    # check for unique connections
     if uniq not in dic and dup not in dic:
-        
        
         dic[uniq] = [src,dst,0,0,packet.time,len(packet),0,0,-1,0,0,0,0,0,0,0,0,0,'udp']
 
@@ -65,7 +61,6 @@ def write_udp_json(packet,writer):
         # calculte offset and length of dic
         len_dic = len(dic)
         offset = len(dic) - 100
-
 
         #loop through unique conections
         for key,value in dic.items():
@@ -90,7 +85,7 @@ def write_udp_json(packet,writer):
                     if svclist[packet.dport] is not None:
                         if value[7] == svclist[packet.dport]:
                             dic[uniq][14] += 1
-                        
+
 
             #check for two second limit
             if src+dst in key[:len(src)]+key[len(key)-len(dst):] and dic[key][4]-packet.time<=2:
@@ -244,6 +239,3 @@ def write_udp_json(packet,writer):
         
         temp_list = [dic[dup][3],dic[dup][7],dic[dup][5],dic[dup][6],dic[dup][8],dic[dup][9],0,0,dic[dup][13],dic[dup][14],dic[dup][15],0,0,dic[dup][18]]
         writer.writerow(temp_list)
-
-
-

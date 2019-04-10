@@ -1,4 +1,0 @@
-Flask
-requests
-numpy
-scikit-learn

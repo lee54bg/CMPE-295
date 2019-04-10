@@ -1,5 +1,0 @@
-sudo airmon-ng start
-sudo airmon-ng check
-sudo airodump-ng
-sudo airodump-ng -c 1 --bssid E0:22:04:6B:06:B1 -w /home/seed/Desktop/capture/ mon0
-

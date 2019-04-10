@@ -65,10 +65,11 @@ def basic_function():
 
 def map_stats(writer):
     def packet_explore(packet):
-        if TCP in packet:
-                write_tcp_json(packet,writer)
-        elif UDP in packet:
-                udp_module.write_udp_json(packet,writer)
+        if IP in packet:            
+            if TCP in packet:
+                    write_tcp_json(packet,writer)
+            elif UDP in packet:
+                    udp_module.write_udp_json(packet,writer)
 
     return packet_explore
 
@@ -163,7 +164,7 @@ def write_tcp_json(packet,writer):
                             syn_error_count +=1
 
                     #svc connections for top 100 connections
-                    if svclist[packet.dport] is not None:
+                    if packet.dport in svclist:
                         if value[7] == svclist[packet.dport]:
                             dic[uniq][14] += 1
                             #SYN error for same service
@@ -258,9 +259,10 @@ def write_tcp_json(packet,writer):
                             srcport_count +=1
                         #calculate SYN error
                         if value[2] > 2 and value[10] !=0:
-                            syn_error_count +=1 
+                            syn_error_count +=1
+
                     #svc connections for top 100 connections
-                    if svclist[packet.dport] is not None:
+                    if packet.dport in svclist:
                         if value[7] in svclist[packet.dport]:
                             dic[uniq][14] += 1
                             #SYN error for same service
@@ -358,7 +360,7 @@ def write_tcp_json(packet,writer):
                         if value[2] > 2 and value[10] !=0:
                             syn_error_count +=1
                     #svc connections for top 100 connections
-                    if svclist[packet.sport] is not None:
+                    if packet.sport in svclist:
                         if value[7] in svclist[packet.sport]:
                             dic[dup][14] += 1
                             #SYN error for same service
