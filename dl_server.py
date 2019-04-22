@@ -21,7 +21,7 @@ def init():
     loaded_model = model_from_json(loaded_model_json)
     
     # load weights into new model
-    loaded_model.load_weights("nn/model.h5")
+    loaded_model.load_weights("models/model.h5")
      
     # evaluate loaded model on test data
     loaded_model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])

@@ -7,93 +7,94 @@ import pickle
 import requests
 import json
 
-kyoto2006 = pd.read_csv('dataset/20150101.csv',header=None)
-kyoto2006.columns = ['Duration','Service', 'Source bytes','Destination bytes',
-              'Count','Same srv rate','Serror rate','Srv serror rate',
-              'Dst host count','Dst host srv count','Dst host same src port rate',
-              'Dst host serror rate','Dst host srv serror rate','Flag',              
-              'Label', 'Protocol','Start Time']
+def load_data(path):
+    kyoto2006 = pd.read_csv(path,header=None)
+    kyoto2006.columns = ['Duration','Service', 'Source bytes','Destination bytes',
+                  'Count','Same srv rate','Serror rate','Srv serror rate',
+                  'Dst host count','Dst host srv count','Dst host same src port rate',
+                  'Dst host serror rate','Dst host srv serror rate','Flag',              
+                  'Label', 'Protocol','Start Time']
 
-kyoto2006.drop(['Start Time', 'Flag'], axis=1)
+    kyoto2006.drop(['Start Time', 'Flag'], axis=1)
 
-kyoto2006 = pd.get_dummies (
-    kyoto2006[['Label','Duration','Source bytes','Destination bytes',
-              'Count','Same srv rate','Serror rate','Srv serror rate',
-              'Dst host count','Dst host srv count','Dst host same src port rate',
-              'Dst host serror rate','Dst host srv serror rate',             
-              'Service', 'Protocol']]
-    )
+    return kyoto2006
 
-kyoto2006 = kyoto2006.loc[kyoto2006['Label'] != -2]
+def preprocess(kyoto2006):
+    kyoto2006 = pd.get_dummies (kyoto2006[['Label','Duration','Source bytes','Destination bytes',
+                  'Count','Same srv rate','Serror rate','Srv serror rate',
+                  'Dst host count','Dst host srv count','Dst host same src port rate',
+                  'Dst host serror rate','Dst host srv serror rate',             
+                  'Service', 'Protocol']])
 
-import numpy as np
-from sklearn.utils import shuffle
+    kyoto2006 = kyoto2006.loc[kyoto2006['Label'] != -2]
 
-kyoto2006_b = kyoto2006.loc[kyoto2006['Label'] == 1]
-kyoto2006_m = kyoto2006.loc[kyoto2006['Label'] == -1]
+    import numpy as np
+    from sklearn.utils import shuffle
 
-train_number = int(len(kyoto2006_b) * 1.0)
+    kyoto2006_b = kyoto2006.loc[kyoto2006['Label'] == 1]
+    kyoto2006_m = kyoto2006.loc[kyoto2006['Label'] == -1]
 
-df_balanced_m = kyoto2006_m.take(np.random.permutation(len(kyoto2006_m))[:train_number])
-df_balanced_b = kyoto2006_b
+    train_number = int(len(kyoto2006_b) * 1.0)
 
-df_balanced = pd.concat([df_balanced_m, df_balanced_b])
-df_balanced = shuffle(df_balanced)
-df_balanced['Label'] = df_balanced['Label'] * (-1)
+    df_balanced_m = kyoto2006_m.take(np.random.permutation(len(kyoto2006_m))[:train_number])
+    df_balanced_b = kyoto2006_b
 
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import LabelEncoder
+    df_balanced = pd.concat([df_balanced_m, df_balanced_b])
+    df_balanced = shuffle(df_balanced)
+    df_balanced['Label'] = df_balanced['Label'] * (-1)
 
-X, y = df_balanced.iloc[:, 1:].values, df_balanced.iloc[:, 0].values
+    from sklearn.model_selection import train_test_split
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.preprocessing import LabelEncoder
 
-le = LabelEncoder()
-y = le.fit_transform(y)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1)
+    x, y = df_balanced.iloc[:, 1:].values, df_balanced.iloc[:, 0].values
 
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+    le = LabelEncoder()
+    y = le.fit_transform(y)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=1)
 
-rfc = RandomForestClassifier(criterion='entropy', n_estimators=10, random_state=1, n_jobs=2)
+    return x, y, x_train, x_test, y_train, y_test
 
-rfc.fit(X_train, y_train)
+def ml_train(x, y, x_train, x_test, y_train, y_test):
+    from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 
-# Saving model to disk
-pickle.dump(rfc, open('models/model.pkl','wb'))
-print("Model Trained")
+    rfc = RandomForestClassifier(criterion='entropy', n_estimators=10, random_state=1, n_jobs=2)
 
-# for test_x in X_test:
-#     data = np.array(test_x).reshape(1, -1)
-#     y_pred = rfc.predict(data).tolist()
-#     print(type(y_pred))
-#     print(y_pred)
+    rfc.fit(x_train, y_train)
+
+    # Saving model to disk
+    pickle.dump(rfc, open('models/model.pkl','wb'))
+    print("Model Trained")
 
 # Regular Deep Learning Artificial Neural Network
 
-import keras
-from keras.models import Sequential
-from keras.layers.core import Dense, Activation
+def dl_train(x, y, x_train, x_test, y_train, y_test):
+    import keras
+    from keras.models import Sequential
+    from keras.layers.core import Dense, Activation
 
-model = Sequential()
-model.add(Dense(10, input_dim=x.shape[1], kernel_initializer='normal', activation='relu'))
-model.add(Dense(50, input_dim=x.shape[1], kernel_initializer='normal', activation='relu'))
-model.add(Dense(10, input_dim=x.shape[1], kernel_initializer='normal', activation='relu'))
-model.add(Dense(1,activation='sigmoid'))
-model.compile(loss='binary_crossentropy', optimizer='adam')
-model.fit(x_train, y_train, validation_data=(x_test,y_test), verbose=2, epochs=100)
+    model = Sequential()
+    model.add(Dense(10, input_dim=x.shape[1], kernel_initializer='normal', activation='relu'))
+    model.add(Dense(50, input_dim=x.shape[1], kernel_initializer='normal', activation='relu'))
+    model.add(Dense(10, input_dim=x.shape[1], kernel_initializer='normal', activation='relu'))
+    model.add(Dense(1,activation='sigmoid'))
+    model.compile(loss='binary_crossentropy', optimizer='adam')
+    model.fit(x_train, y_train, validation_data=(x_test,y_test), verbose=2, epochs=100)
 
-# serialize model to JSON
-model_json = model.to_json()
-with open("models/model.json", "w") as json_file:
-    json_file.write(model_json)
+    # serialize model to JSON
+    model_json = model.to_json()
+    with open("models/model.json", "w") as json_file:
+        json_file.write(model_json)
 
-# serialize weights to HDF5
-model.save_weights("models/model.h5")
-print("Saved model to disk")
+    # serialize weights to HDF5
+    model.save_weights("models/model.h5")
+    print("Saved model to disk")
 
-# Basic Autoencoder
+if __name__ == "__main__":
+    path = "dataset/20150101.csv"
+    
+    kyoto2006 = load_data(path)
 
-# ae = Sequential()
-# ae.add(Dense(21, kernel_initializer='normal', activation='relu')(x))
-# ae.add(Dense(42, activation='sigmoid'))
-# ae.compile(loss='mean_squared_error', optimizer='adam')
-# ae.fit(x_train, y_train, validation_data=(x_test,y_test), verbose=2, epochs=50)
+    x, y, x_train, x_test, y_train, y_test = preprocess(kyoto2006)
+
+    ml_train(x, y, x_train, x_test, y_train, y_test)

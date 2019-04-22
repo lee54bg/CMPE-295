@@ -29,9 +29,6 @@ def basic_function():
         else:
             data = data_to_send.get()
 
-            # print(len(data))
-            # print(data)
-
             srv = data[1]
             prt = data[13]
 
@@ -53,15 +50,11 @@ def basic_function():
             encoded_service.extend(encoded_protocol)
             data.extend(encoded_service)
 
-            # print(len(data))
-            # print(data)
-
             # Format the data into a list though the data is already in a list
             # data = np.array(data).tolist()
             r = requests.post(url,json={'exp':data})
 
             print(r.json())
-
 
 def map_stats(writer):
     def packet_explore(packet):
@@ -72,7 +65,6 @@ def map_stats(writer):
                     udp_module.write_udp_json(packet,writer)
 
     return packet_explore
-
 
 global svclist
 
@@ -87,6 +79,9 @@ svclist = {
     # 443: 'https',
     53: 'dns'
 }
+
+def wifi_extract(packet):
+    
 
 def write_tcp_json(packet,writer):
     src = packet[IP].src

@@ -82,7 +82,7 @@ def write_udp_json(packet,writer):
                             srcport_count +=1
 
                     #svc connections for top 100 connections
-                    if svclist[packet.dport] is not None:
+                    if packet.dport in svclist:
                         if value[7] == svclist[packet.dport]:
                             dic[uniq][14] += 1
 
@@ -149,7 +149,7 @@ def write_udp_json(packet,writer):
                             srcport_count +=1
                         
                     #svc connections for top 100 connections
-                    if svclist[packet.dport] is not None:
+                    if packet.dport in svclist:
                         if value[7] == svclist[packet.dport]:
                             dic[uniq][14] += 1
                        
@@ -216,7 +216,7 @@ def write_udp_json(packet,writer):
                             srcport_count +=1 
                         
                     #svc connections for top 100 connections
-                    if svclist[packet.sport] is not None:
+                    if packet.sport in svclist:
                         if value[7] == svclist[packet.sport]:
                             dic[dup][14] += 1
                         

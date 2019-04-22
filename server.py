@@ -7,7 +7,7 @@ import pickle
 app = Flask(__name__)
 
 # Load the model
-model = pickle.load(open('model.pkl','rb'))
+model = pickle.load(open('models/model.pkl','rb'))
 
 @app.route('/api',methods=['POST'])
 def predict():

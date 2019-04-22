@@ -9,16 +9,17 @@ import requests
 import json
 import requests
 
-# Load the Kyoto 2006 Dataset
-ky26 = pd.read_csv('20150101.csv',header=None)
 
-# Provide columns for the Kyoto Dataset
-ky26.columns = ['Duration','Service', 'Source bytes','Destination bytes',
-              'Count','Same srv rate','Serror rate','Srv serror rate',
-              'Dst host count','Dst host srv count','Dst host same src port rate',
-              'Dst host serror rate','Dst host srv serror rate','Flag',              
-              'Label',
-              'Protocol','Start Time']
+def load_data():
+    # Load the Kyoto 2006 Dataset
+    ky26 = pd.read_csv('20150101.csv',header=None)
+
+    # Provide columns for the Kyoto Dataset
+    ky26.columns = ['Duration','Service', 'Source bytes','Destination bytes',
+                    'Count','Same srv rate','Serror rate','Srv serror rate',
+                    'Dst host count','Dst host srv count','Dst host same src port rate',
+                    'Dst host serror rate','Dst host srv serror rate','Flag',              
+                    'Label', 'Protocol','Start Time']
 
 # Removing the unknown attacks
 ky26 = ky26.loc[ky26['Label'] != -2]
@@ -44,7 +45,7 @@ traf_benign = kyoto_benign
 
 processed_data = pd.concat([traf_mal, traf_benign])
 
-processed_data['Label'] = processed_data['Label'] * (-1)
+# processed_data['Label'] = processed_data['Label'] * (-1)
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
