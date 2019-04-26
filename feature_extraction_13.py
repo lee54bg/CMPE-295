@@ -119,7 +119,7 @@ class FeatureExtraction13(app_manager.RyuApp):
         service = ['other', 'ssh', 'dns', 'rdp', 'smtp', 'snmp', 'http', 'smtp,ssl', 'ssl', 'sip']
         protocol = ["icmp", "tcp", "udp"]
       
-        url = 'http://127.0.0.1:5000/api'
+        url = 'http://128.110.99.138:5000/api'
 
         while True:
             if data_to_send.empty():
@@ -150,7 +150,7 @@ class FeatureExtraction13(app_manager.RyuApp):
                 data.extend(encoded_service)
 
                 # Format the data into a list though the data is already in a list
-                # data = np.array(data).tolist()
+                data = np.array(data).tolist()
                 # r = requests.post(url,json={'exp':data})
                 print(data)
                 # print(r.json())
@@ -158,7 +158,7 @@ class FeatureExtraction13(app_manager.RyuApp):
 
 
     @set_ev_cls(TimeoutEvent)
-    def empty_table(self, ev):
+    def flow_table(self, ev):
         """
         Once the timeout has been triggered, ensure that the flow entries
         of the switch has been cleared
@@ -258,14 +258,14 @@ class FeatureExtraction13(app_manager.RyuApp):
                 src_port = udp_seg.src_port
                 dst_port = udp_seg.dst_port
                 self.extract_udp(ip_packet, udp_seg, timestamp)
-                self.counter += 1
-                print("Packet Number {} UDP".format(self.counter))
+                # self.counter += 1
+                # print("Packet Number {} UDP".format(self.counter))
             elif tcp_seg:
                 src_port = tcp_seg.src_port
                 dst_port = tcp_seg.dst_port
                 self.extract_tcp(ip_packet, tcp_seg, timestamp)
-                self.counter += 1
-                print("Packet Number {} TCP".format(self.counter))
+                # self.counter += 1
+                # print("Packet Number {} TCP".format(self.counter))
             match = parser.OFPMatch(eth_type=0x0800,
                 in_port=in_port,
                 ipv4_src=src_ip,
