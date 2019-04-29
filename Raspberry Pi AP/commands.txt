@@ -1,0 +1,43 @@
+    1  ping google.com
+    2  sudo apt-get install -y openvswitch-switch
+    3  sudo ovs-vsctl show
+    4  sudo su
+    5  sudo nano /etc/dhcpcd.conf
+    6  sudo cp /etc/dhcpcd.conf /etc/dhcpcd.conf.bak
+    7  sudo nano /etc/dhcpcd.conf
+    8  more
+    9  ls
+   10  ls /etc/dhcpcd.conf
+   11  ls /etc/
+   12  ls -l /etc/
+   13  sudo service dhcpcd restart
+   14  sudo mv /etc/dnsmasq.conf /etc/dnsmasq.conf.org
+   15  sudo nano /etc/dnsmasq.conf
+   16  sudo nano /etc/hostapd/hostapd.conf
+   17  sudo nano /etc/default/hostapd
+   18  sudo systemctl start hostapd
+   19  sudo systemctl unmask hostapd
+   20  sudo systemctl start hostapd
+   21  sudo systemctl start dnsmasq
+   22  sudo nano /etc/hostapd/hostapd.conf
+   23  sudo vi /etc/hostapd/hostapd.conf
+   24  sudo systemctl restart hostapd
+   25  more /etc/network/interfaces
+   26  sudo nano /etc/dnsmasq.conf
+   27  sudo vi /etc/dnsmasq.conf
+   28  sudo systemctl restart dnsmasq
+   29  vi /etc/sysctl.conf
+   30  sudo vi /etc/sysctl.conf
+   31  sudo reboot now
+   32  sudo systemctl restart hostapd
+   33  sudo apt-get install -y bridge-utils
+   34  ping google.com
+   35  sudo ovs-vsctl show
+   36  sudo brctl addbr br0
+   37  sudo brctl addif br0 eth0
+   38  sudo vi /etc/network/interfaces
+   39  sudo vi /etc/hostapd/hostapd.conf
+   40  sudo reboot
+   41  sudo systemctl restart hostapd
+   42  history
+   43  history >> commands.txt
