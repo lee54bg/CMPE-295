@@ -119,14 +119,18 @@ class FeatureExtraction13(app_manager.RyuApp):
         service = ['other', 'ssh', 'dns', 'rdp', 'smtp', 'snmp', 'http', 'smtp,ssl', 'ssl', 'sip']
         protocol = ["icmp", "tcp", "udp"]
       
-        url = 'http://871d8002.ngrok.io/api'
+        url = 'http://cc1f7f60.ngrok.io/api'
 
         while True:
             if data_to_send.empty():
                 hub.sleep(1)
                 continue
             else:
-                data = data_to_send.get()
+                item = data_to_send.get()
+                
+                data = item[0]
+                timestamp = item[1]
+
                 features = None
 
                 ip_packet = data.get_protocol(ipv4.ipv4)
@@ -137,20 +141,28 @@ class FeatureExtraction13(app_manager.RyuApp):
                     src_ip = ip_packet.src
                     dst_ip = ip_packet.dst
                     
+                    print(src_ip)
+                    print(dst_ip)
+                     
                     if udp_seg:
                         src_port = udp_seg.src_port
                         dst_port = udp_seg.dst_port
                         features = self.extract_udp(ip_packet, udp_seg, timestamp)
+                        print("UDP")
                         # self.counter += 1
                         # print("Packet Number {} UDP".format(self.counter))
                     elif tcp_seg:
                         src_port = tcp_seg.src_port
                         dst_port = tcp_seg.dst_port
                         features = self.extract_tcp(ip_packet, tcp_seg, timestamp)
+                        print("TCP")
                         # self.counter += 1
                         # print("Packet Number {} TCP".format(self.counter))
-
-                    srv = features[1]
+                    srv = None
+                    try:
+                        srv = features[1]
+                    except:
+                        print(features)
                     prt = features[13]
 
                     del features[1]
@@ -257,6 +269,7 @@ class FeatureExtraction13(app_manager.RyuApp):
 
         pkt = packet.Packet(msg.data)
         eth = pkt.get_protocols(ethernet.ethernet)[0]
+        ip_packet = pkt.get_protocol(ipv4.ipv4)
         
         src_ip = 0
         dst_ip = 0
@@ -266,14 +279,15 @@ class FeatureExtraction13(app_manager.RyuApp):
         match = None
         actions = []
 
-        data_to_send.put(pkt)
+        item = [pkt, timestamp]
+        data_to_send.put(item)
         
-        # if ip_packet:
-        #     match = parser.OFPMatch(eth_type=0x0800,
-        #         in_port=in_port,
-        #         ipv4_src=src_ip,
-        #         ipv4_dst=dst_ip
-        #     )
+        if ip_packet:
+            match = parser.OFPMatch(eth_type=0x0800,
+                in_port=in_port,
+                ipv4_src=src_ip,
+                ipv4_dst=dst_ip
+        )
             
             # self.basic_function()
             # print("{} {} {}".format(timestamp, src_ip, dst_ip))
