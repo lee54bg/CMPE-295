@@ -268,12 +268,12 @@ class FeatureExtraction13(app_manager.RyuApp):
 
         data_to_send.put(pkt)
         
-        if ip_packet:
-            match = parser.OFPMatch(eth_type=0x0800,
-                in_port=in_port,
-                ipv4_src=src_ip,
-                ipv4_dst=dst_ip
-            )
+        # if ip_packet:
+        #     match = parser.OFPMatch(eth_type=0x0800,
+        #         in_port=in_port,
+        #         ipv4_src=src_ip,
+        #         ipv4_dst=dst_ip
+        #     )
             
             # self.basic_function()
             # print("{} {} {}".format(timestamp, src_ip, dst_ip))
