@@ -119,20 +119,42 @@ class FeatureExtraction13(app_manager.RyuApp):
         service = ['other', 'ssh', 'dns', 'rdp', 'smtp', 'snmp', 'http', 'smtp,ssl', 'ssl', 'sip']
         protocol = ["icmp", "tcp", "udp"]
       
-        url = 'http://128.110.99.138:5000/api'
+        url = 'http://871d8002.ngrok.io/api'
 
         while True:
             if data_to_send.empty():
-                hub.sleep(5)
+                hub.sleep(1)
                 continue
             else:
                 data = data_to_send.get()
+                features = None
 
-                srv = data[1]
-                prt = data[13]
+                ip_packet = data.get_protocol(ipv4.ipv4)
+                udp_seg = data.get_protocol(udp.udp)
+                tcp_seg = data.get_protocol(tcp.tcp)
 
-                del data[1]
-                del data[12]
+                if ip_packet:
+                    src_ip = ip_packet.src
+                    dst_ip = ip_packet.dst
+                    
+                    if udp_seg:
+                        src_port = udp_seg.src_port
+                        dst_port = udp_seg.dst_port
+                        features = self.extract_udp(ip_packet, udp_seg, timestamp)
+                        # self.counter += 1
+                        # print("Packet Number {} UDP".format(self.counter))
+                    elif tcp_seg:
+                        src_port = tcp_seg.src_port
+                        dst_port = tcp_seg.dst_port
+                        features = self.extract_tcp(ip_packet, tcp_seg, timestamp)
+                        # self.counter += 1
+                        # print("Packet Number {} TCP".format(self.counter))
+
+                srv = features[1]
+                prt = features[13]
+
+                del features[1]
+                del features[12]
 
                 service_to_int = dict((c, i) for i, c in enumerate(service))
                 protocols_to_int = dict((c, i) for i, c in enumerate(protocol))
@@ -147,15 +169,13 @@ class FeatureExtraction13(app_manager.RyuApp):
                 encoded_protocol[integer_encoded_protocol] = 1
 
                 encoded_service.extend(encoded_protocol)
-                data.extend(encoded_service)
+                features.extend(encoded_service)
 
                 # Format the data into a list though the data is already in a list
-                data = np.array(data).tolist()
-                # r = requests.post(url,json={'exp':data})
-                print(data)
-                # print(r.json())
-
-
+                features = np.array(features).tolist()
+                r = requests.post(url,json={'exp':features})
+                print(features)
+                print(r.json())
 
     @set_ev_cls(TimeoutEvent)
     def flow_table(self, ev):
@@ -238,10 +258,6 @@ class FeatureExtraction13(app_manager.RyuApp):
         pkt = packet.Packet(msg.data)
         eth = pkt.get_protocols(ethernet.ethernet)[0]
         
-        ip_packet = pkt.get_protocol(ipv4.ipv4)
-        udp_seg = pkt.get_protocol(udp.udp)
-        tcp_seg = pkt.get_protocol(tcp.tcp)
-
         src_ip = 0
         dst_ip = 0
         src_port = 0
@@ -250,22 +266,9 @@ class FeatureExtraction13(app_manager.RyuApp):
         match = None
         actions = []
 
+        data_to_send.put(pkt)
+        
         if ip_packet:
-            src_ip = ip_packet.src
-            dst_ip = ip_packet.dst
-
-            if udp_seg:
-                src_port = udp_seg.src_port
-                dst_port = udp_seg.dst_port
-                self.extract_udp(ip_packet, udp_seg, timestamp)
-                # self.counter += 1
-                # print("Packet Number {} UDP".format(self.counter))
-            elif tcp_seg:
-                src_port = tcp_seg.src_port
-                dst_port = tcp_seg.dst_port
-                self.extract_tcp(ip_packet, tcp_seg, timestamp)
-                # self.counter += 1
-                # print("Packet Number {} TCP".format(self.counter))
             match = parser.OFPMatch(eth_type=0x0800,
                 in_port=in_port,
                 ipv4_src=src_ip,
@@ -419,7 +422,7 @@ class FeatureExtraction13(app_manager.RyuApp):
             temp_list = [dic[uniq][3],dic[uniq][7],dic[uniq][5],dic[uniq][6],dic[uniq][8],dic[uniq][9],dic[uniq][11],
             dic[uniq][12],dic[uniq][13],dic[uniq][14],dic[uniq][15],dic[uniq][16],dic[uniq][17],dic[uniq][18]]
 
-            data_to_send.put(temp_list)
+            return temp_list
 
         elif uniq in dic:
             
@@ -519,7 +522,7 @@ class FeatureExtraction13(app_manager.RyuApp):
             temp_list = [dic[uniq][3],dic[uniq][7],dic[uniq][5],dic[uniq][6],dic[uniq][8],dic[uniq][9],dic[uniq][11],
             dic[uniq][12],dic[uniq][13],dic[uniq][14],dic[uniq][15],dic[uniq][16],dic[uniq][17],dic[uniq][18]]
 
-            data_to_send.put(temp_list)
+            return temp_list
             
         elif dup in dic:
             
@@ -615,7 +618,7 @@ class FeatureExtraction13(app_manager.RyuApp):
             temp_list = [dic[dup][3],dic[dup][7],dic[dup][5],dic[dup][6],dic[dup][8],dic[dup][9],dic[dup][11],
             dic[dup][12],dic[dup][13],dic[dup][14],dic[dup][15],dic[dup][16],dic[dup][17],dic[dup][18]]
 
-            data_to_send.put(temp_list)
+            return temp_list
 
     def extract_udp(self, packet, udp_seg, timestamp):
         src = packet.src
@@ -693,7 +696,8 @@ class FeatureExtraction13(app_manager.RyuApp):
                 dic[uniq][15] = (srcport_count/dic[uniq][13])
             
             temp_list = [dic[uniq][3],dic[uniq][7],dic[uniq][5],dic[uniq][6],dic[uniq][8],dic[uniq][9],0,0,dic[uniq][13],dic[uniq][14],dic[uniq][15],0,0,dic[uniq][18]]
-            data_to_send.put(temp_list)
+            
+            return temp_list
             
         elif uniq in dic:
             #packet count
@@ -759,7 +763,7 @@ class FeatureExtraction13(app_manager.RyuApp):
             
             temp_list = [dic[uniq][3],dic[uniq][7],dic[uniq][5],dic[uniq][6],dic[uniq][8],dic[uniq][9],0,0,dic[uniq][13],dic[uniq][14],dic[uniq][15],0,0,dic[uniq][18]]
             
-            data_to_send.put(temp_list)
+            return temp_list
             
         elif dup in dic:
             
@@ -827,4 +831,4 @@ class FeatureExtraction13(app_manager.RyuApp):
             
             temp_list = [dic[dup][3],dic[dup][7],dic[dup][5],dic[dup][6],dic[dup][8],dic[dup][9],0,0,dic[dup][13],dic[dup][14],dic[dup][15],0,0,dic[dup][18]]
 
-            data_to_send.put(temp_list)
+            return temp_list
