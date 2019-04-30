@@ -150,32 +150,32 @@ class FeatureExtraction13(app_manager.RyuApp):
                         # self.counter += 1
                         # print("Packet Number {} TCP".format(self.counter))
 
-                srv = features[1]
-                prt = features[13]
+                    srv = features[1]
+                    prt = features[13]
 
-                del features[1]
-                del features[12]
+                    del features[1]
+                    del features[12]
 
-                service_to_int = dict((c, i) for i, c in enumerate(service))
-                protocols_to_int = dict((c, i) for i, c in enumerate(protocol))
+                    service_to_int = dict((c, i) for i, c in enumerate(service))
+                    protocols_to_int = dict((c, i) for i, c in enumerate(protocol))
 
-                integer_encoded_service = service_to_int[srv]
-                integer_encoded_protocol = protocols_to_int[prt]
+                    integer_encoded_service = service_to_int[srv]
+                    integer_encoded_protocol = protocols_to_int[prt]
 
-                encoded_service = [0 for _ in range(len(service))]
-                encoded_service[integer_encoded_service] = 1
+                    encoded_service = [0 for _ in range(len(service))]
+                    encoded_service[integer_encoded_service] = 1
 
-                encoded_protocol = [0 for _ in range(len(protocol))]
-                encoded_protocol[integer_encoded_protocol] = 1
+                    encoded_protocol = [0 for _ in range(len(protocol))]
+                    encoded_protocol[integer_encoded_protocol] = 1
 
-                encoded_service.extend(encoded_protocol)
-                features.extend(encoded_service)
+                    encoded_service.extend(encoded_protocol)
+                    features.extend(encoded_service)
 
-                # Format the data into a list though the data is already in a list
-                features = np.array(features).tolist()
-                r = requests.post(url,json={'exp':features})
-                print(features)
-                print(r.json())
+                    # Format the data into a list though the data is already in a list
+                    features = np.array(features).tolist()
+                    r = requests.post(url,json={'exp':features})
+                    print(features)
+                    print(r.json())
 
     @set_ev_cls(TimeoutEvent)
     def flow_table(self, ev):
