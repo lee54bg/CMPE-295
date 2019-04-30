@@ -144,50 +144,50 @@ class FeatureExtraction13(app_manager.RyuApp):
                     print(src_ip)
                     print(dst_ip)
                      
-                    if udp_seg:
-                        src_port = udp_seg.src_port
-                        dst_port = udp_seg.dst_port
-                        features = self.extract_udp(ip_packet, udp_seg, timestamp)
-                        print("UDP")
-                        # self.counter += 1
-                        # print("Packet Number {} UDP".format(self.counter))
-                    elif tcp_seg:
+                    # if udp_seg:
+                    #     src_port = udp_seg.src_port
+                    #     dst_port = udp_seg.dst_port
+                    #     features = self.extract_udp(ip_packet, udp_seg, timestamp)
+                    #     print("UDP")
+                    #     # self.counter += 1
+                    #     # print("Packet Number {} UDP".format(self.counter))
+                    if tcp_seg:
                         src_port = tcp_seg.src_port
                         dst_port = tcp_seg.dst_port
                         features = self.extract_tcp(ip_packet, tcp_seg, timestamp)
-                        print("TCP")
+                        # print("TCP")
                         # self.counter += 1
                         # print("Packet Number {} TCP".format(self.counter))
-                    srv = None
-                    try:
-                        srv = features[1]
-                    except:
+                        srv = None
+                        try:
+                            srv = features[1]
+                        except:
+                            print(features)
+                        prt = features[13]
+
+                        del features[1]
+                        del features[12]
+
+                        service_to_int = dict((c, i) for i, c in enumerate(service))
+                        protocols_to_int = dict((c, i) for i, c in enumerate(protocol))
+
+                        integer_encoded_service = service_to_int[srv]
+                        integer_encoded_protocol = protocols_to_int[prt]
+
+                        encoded_service = [0 for _ in range(len(service))]
+                        encoded_service[integer_encoded_service] = 1
+
+                        encoded_protocol = [0 for _ in range(len(protocol))]
+                        encoded_protocol[integer_encoded_protocol] = 1
+
+                        encoded_service.extend(encoded_protocol)
+                        features.extend(encoded_service)
+
+                        # Format the data into a list though the data is already in a list
+                        features = np.array(features).tolist()
+                        r = requests.post(url,json={'exp':features})
                         print(features)
-                    prt = features[13]
-
-                    del features[1]
-                    del features[12]
-
-                    service_to_int = dict((c, i) for i, c in enumerate(service))
-                    protocols_to_int = dict((c, i) for i, c in enumerate(protocol))
-
-                    integer_encoded_service = service_to_int[srv]
-                    integer_encoded_protocol = protocols_to_int[prt]
-
-                    encoded_service = [0 for _ in range(len(service))]
-                    encoded_service[integer_encoded_service] = 1
-
-                    encoded_protocol = [0 for _ in range(len(protocol))]
-                    encoded_protocol[integer_encoded_protocol] = 1
-
-                    encoded_service.extend(encoded_protocol)
-                    features.extend(encoded_service)
-
-                    # Format the data into a list though the data is already in a list
-                    features = np.array(features).tolist()
-                    r = requests.post(url,json={'exp':features})
-                    print(features)
-                    print(r.json())
+                        print(r.json())
 
     @set_ev_cls(TimeoutEvent)
     def flow_table(self, ev):
