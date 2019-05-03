@@ -30,6 +30,9 @@ from ryu.lib.packet import ether_types
 from ryu.lib import hub
 from random import randint
 from random import seed
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
 
 import numpy as np
 import requests
@@ -105,6 +108,7 @@ class FeatureExtraction13(app_manager.RyuApp):
         self.datapath = None
         self.mac_to_port = {}
         self.counter = 0
+        app.run(port=5000, debug=True, threaded=True)
 
     def gen_timer(self):
         """
@@ -136,90 +140,107 @@ class FeatureExtraction13(app_manager.RyuApp):
                 features = None
 
                 ip_packet = data.get_protocol(ipv4.ipv4)
+                
                 try:
-                    udp_seg = data.get_protocol(udp.udp)
+                    if ip_packet:
+                        src_ip = ip_packet.src
+                        dst_ip = ip_packet.dst
+                        
+                        udp_seg = data.get_protocol(udp.udp)
+                        tcp_seg = data.get_protocol(tcp.tcp)
+
+                        if tcp_seg:
+                            tcp_send(tcp_seg, src_ip, dst_ip)
+                        elif udp_seg:
+                            udp_send(udp_seg, src_ip, dst_ip)
                 except:
                     print("Not working")
-                tcp_seg = data.get_protocol(tcp.tcp)
-
-                if ip_packet:
-                    src_ip = ip_packet.src
-                    dst_ip = ip_packet.dst
-                     
-                    if udp_seg:
-                        url = "https://229c8b7b.ngrok.io/slave02/api"
-                        src_port = udp_seg.src_port
-                        dst_port = udp_seg.dst_port
-                        features = self.extract_udp(ip_packet, udp_seg, timestamp)
-                        
-                        srv = None
-                        try:
-                            srv = features[1]
-                        except:
-                            print(features)
-                        prt = features[13]
-
-                        del features[1]
-                        del features[12]
-
-                        service_to_int = dict((c, i) for i, c in enumerate(service))
-                        protocols_to_int = dict((c, i) for i, c in enumerate(protocol))
-
-                        integer_encoded_service = service_to_int[srv]
-                        integer_encoded_protocol = protocols_to_int[prt]
-
-                        encoded_service = [0 for _ in range(len(service))]
-                        encoded_service[integer_encoded_service] = 1
-
-                        encoded_protocol = [0 for _ in range(len(protocol))]
-                        encoded_protocol[integer_encoded_protocol] = 1
-
-                        encoded_service.extend(encoded_protocol)
-                        features.extend(encoded_service)
-
-                        # Format the data into a list though the data is already in a list
-                        features = np.array(features).tolist()
-                        r = requests.post(url,json={'exp':features})
-                        # print(features)
-                        print("UDP {}".format(r.json()))
                 
-                    elif tcp_seg:
-                        url = "https://229c8b7b.ngrok.io/slave01/api"
-                        src_port = tcp_seg.src_port
-                        dst_port = tcp_seg.dst_port
-                        features = self.extract_tcp(ip_packet, tcp_seg, timestamp)
-                        
-                        srv = None
-                        try:
-                            srv = features[1]
-                        except:
-                            print(features)
-                        prt = features[13]
 
-                        del features[1]
-                        del features[12]
+    @app.route('/tcp',methods=['PUT'])
+    def tcp_send(tcp_seg, src_ip, dst_ip):
+        url = "https://229c8b7b.ngrok.io/slave01/api"
+        src_port = tcp_seg.src_port
+        dst_port = tcp_seg.dst_port
+        features = self.extract_tcp(ip_packet, tcp_seg, timestamp)
+        
+        srv = None
+        try:
+            srv = features[1]
+        except:
+            print(features)
+        prt = features[13]
 
-                        service_to_int = dict((c, i) for i, c in enumerate(service))
-                        protocols_to_int = dict((c, i) for i, c in enumerate(protocol))
+        del features[1]
+        del features[12]
 
-                        integer_encoded_service = service_to_int[srv]
-                        integer_encoded_protocol = protocols_to_int[prt]
+        service_to_int = dict((c, i) for i, c in enumerate(service))
+        protocols_to_int = dict((c, i) for i, c in enumerate(protocol))
 
-                        encoded_service = [0 for _ in range(len(service))]
-                        encoded_service[integer_encoded_service] = 1
+        integer_encoded_service = service_to_int[srv]
+        integer_encoded_protocol = protocols_to_int[prt]
 
-                        encoded_protocol = [0 for _ in range(len(protocol))]
-                        encoded_protocol[integer_encoded_protocol] = 1
+        encoded_service = [0 for _ in range(len(service))]
+        encoded_service[integer_encoded_service] = 1
 
-                        encoded_service.extend(encoded_protocol)
-                        features.extend(encoded_service)
+        encoded_protocol = [0 for _ in range(len(protocol))]
+        encoded_protocol[integer_encoded_protocol] = 1
 
-                        # Format the data into a list though the data is already in a list
-                        features = np.array(features).tolist()
-                        r = requests.post(url,json={'exp':features})
-                        # print(features)
-                        print("TCP {}".format(r.json()))
+        encoded_service.extend(encoded_protocol)
+        features.extend(encoded_service)
 
+        # Format the data into a list though the data is already in a list
+        features = np.array(features).tolist()
+        r = requests.post(url,json={'exp':features})
+        # print(features)
+        
+        print("TCP {}".format(r.json()))
+
+        return jsonify(r)
+    
+    @app.route('/udp',methods=['PUT'])
+    def udp_send(udp_seg, src_ip, dst_ip):
+        if udp_seg:
+            url = "https://229c8b7b.ngrok.io/slave02/api"
+            src_port = udp_seg.src_port
+            dst_port = udp_seg.dst_port
+            features = self.extract_udp(ip_packet, udp_seg, timestamp)
+            
+            srv = None
+            try:
+                srv = features[1]
+            except:
+                print(features)
+            prt = features[13]
+
+            del features[1]
+            del features[12]
+
+            service_to_int = dict((c, i) for i, c in enumerate(service))
+            protocols_to_int = dict((c, i) for i, c in enumerate(protocol))
+
+            integer_encoded_service = service_to_int[srv]
+            integer_encoded_protocol = protocols_to_int[prt]
+
+            encoded_service = [0 for _ in range(len(service))]
+            encoded_service[integer_encoded_service] = 1
+
+            encoded_protocol = [0 for _ in range(len(protocol))]
+            encoded_protocol[integer_encoded_protocol] = 1
+
+            encoded_service.extend(encoded_protocol)
+            features.extend(encoded_service)
+
+            # Format the data into a list though the data is already in a list
+            features = np.array(features).tolist()
+            r = requests.post(url,json={'exp':features})
+            results = requests.put(url,json={'exp':features})
+
+            # print(features)
+            print("UDP {}".format(r.json()))
+
+            return jsonify(r)
+    
     @set_ev_cls(TimeoutEvent)
     def flow_table(self, ev):
         """
