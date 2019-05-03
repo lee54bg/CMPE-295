@@ -142,15 +142,15 @@ class FeatureExtraction13(app_manager.RyuApp):
                         src_ip = ip_packet.src
                         dst_ip = ip_packet.dst
                         
-                        udp_seg = data.get_protocol(udp.udp)
+                        # udp_seg = data.get_protocol(udp.udp)
                         tcp_seg = data.get_protocol(tcp.tcp)
 
                         if tcp_seg:
                             tcp_send(tcp_seg, src_ip, dst_ip)
                             print("TCP")
-                        elif udp_seg:
-                            udp_send(udp_seg, src_ip, dst_ip)
-                            print("UDP")
+                        # elif udp_seg:
+                        #     udp_send(udp_seg, src_ip, dst_ip)
+                        #     print("UDP")
                 except:
                     print("Not working")
                 
