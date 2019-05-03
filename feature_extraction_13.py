@@ -30,9 +30,6 @@ from ryu.lib.packet import ether_types
 from ryu.lib import hub
 from random import randint
 from random import seed
-from flask import Flask, request, jsonify
-
-app = Flask(__name__)
 
 import numpy as np
 import requests
@@ -108,8 +105,7 @@ class FeatureExtraction13(app_manager.RyuApp):
         self.datapath = None
         self.mac_to_port = {}
         self.counter = 0
-        app.run(port=5000, debug=True, threaded=True)
-
+        
     def gen_timer(self):
         """
         Generate a random timeout from 15 to 30 seconds
@@ -151,13 +147,13 @@ class FeatureExtraction13(app_manager.RyuApp):
 
                         if tcp_seg:
                             tcp_send(tcp_seg, src_ip, dst_ip)
+                            print("TCP")
                         elif udp_seg:
                             udp_send(udp_seg, src_ip, dst_ip)
+                            print("UDP")
                 except:
                     print("Not working")
                 
-
-    @app.route('/tcp',methods=['PUT'])
     def tcp_send(tcp_seg, src_ip, dst_ip):
         url = "https://229c8b7b.ngrok.io/slave01/api"
         src_port = tcp_seg.src_port
@@ -197,7 +193,6 @@ class FeatureExtraction13(app_manager.RyuApp):
 
         return jsonify(r)
     
-    @app.route('/udp',methods=['PUT'])
     def udp_send(udp_seg, src_ip, dst_ip):
         if udp_seg:
             url = "https://229c8b7b.ngrok.io/slave02/api"
