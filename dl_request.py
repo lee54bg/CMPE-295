@@ -58,7 +58,7 @@ y = le.fit_transform(y)
 
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
 
-url = 'http://localhost:5000/api'
+url = 'http://http://229c8b7b.ngrok.io/slave01/api'
 
 for data in x_test:
     new_data = np.expand_dims(data, 0)

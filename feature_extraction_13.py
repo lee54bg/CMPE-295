@@ -48,7 +48,9 @@ global flags
 global counter
 
 dic = {}
+udp = {}
 server_list = []
+
 svclist = {
     7: 'echo',
     21: 'ftp',
@@ -119,7 +121,7 @@ class FeatureExtraction13(app_manager.RyuApp):
         service = ['other', 'ssh', 'dns', 'rdp', 'smtp', 'snmp', 'http', 'smtp,ssl', 'ssl', 'sip']
         protocol = ["icmp", "tcp", "udp"]
       
-        url = 'http://cc1f7f60.ngrok.io/api'
+        url = ""
 
         while True:
             if data_to_send.empty():
@@ -134,30 +136,22 @@ class FeatureExtraction13(app_manager.RyuApp):
                 features = None
 
                 ip_packet = data.get_protocol(ipv4.ipv4)
-                udp_seg = data.get_protocol(udp.udp)
+                try:
+                    udp_seg = data.get_protocol(udp.udp)
+                except:
+                    print("Not working")
                 tcp_seg = data.get_protocol(tcp.tcp)
 
                 if ip_packet:
                     src_ip = ip_packet.src
                     dst_ip = ip_packet.dst
-                    
-                    print(src_ip)
-                    print(dst_ip)
                      
-                    # if udp_seg:
-                    #     src_port = udp_seg.src_port
-                    #     dst_port = udp_seg.dst_port
-                    #     features = self.extract_udp(ip_packet, udp_seg, timestamp)
-                    #     print("UDP")
-                    #     # self.counter += 1
-                    #     # print("Packet Number {} UDP".format(self.counter))
-                    if tcp_seg:
-                        src_port = tcp_seg.src_port
-                        dst_port = tcp_seg.dst_port
-                        features = self.extract_tcp(ip_packet, tcp_seg, timestamp)
-                        # print("TCP")
-                        # self.counter += 1
-                        # print("Packet Number {} TCP".format(self.counter))
+                    if udp_seg:
+                        url = "https://229c8b7b.ngrok.io/slave02/api"
+                        src_port = udp_seg.src_port
+                        dst_port = udp_seg.dst_port
+                        features = self.extract_udp(ip_packet, udp_seg, timestamp)
+                        
                         srv = None
                         try:
                             srv = features[1]
@@ -186,8 +180,45 @@ class FeatureExtraction13(app_manager.RyuApp):
                         # Format the data into a list though the data is already in a list
                         features = np.array(features).tolist()
                         r = requests.post(url,json={'exp':features})
-                        print(features)
-                        print(r.json())
+                        # print(features)
+                        print("UDP {}".format(r.json()))
+                
+                    elif tcp_seg:
+                        url = "https://229c8b7b.ngrok.io/slave01/api"
+                        src_port = tcp_seg.src_port
+                        dst_port = tcp_seg.dst_port
+                        features = self.extract_tcp(ip_packet, tcp_seg, timestamp)
+                        
+                        srv = None
+                        try:
+                            srv = features[1]
+                        except:
+                            print(features)
+                        prt = features[13]
+
+                        del features[1]
+                        del features[12]
+
+                        service_to_int = dict((c, i) for i, c in enumerate(service))
+                        protocols_to_int = dict((c, i) for i, c in enumerate(protocol))
+
+                        integer_encoded_service = service_to_int[srv]
+                        integer_encoded_protocol = protocols_to_int[prt]
+
+                        encoded_service = [0 for _ in range(len(service))]
+                        encoded_service[integer_encoded_service] = 1
+
+                        encoded_protocol = [0 for _ in range(len(protocol))]
+                        encoded_protocol[integer_encoded_protocol] = 1
+
+                        encoded_service.extend(encoded_protocol)
+                        features.extend(encoded_service)
+
+                        # Format the data into a list though the data is already in a list
+                        features = np.array(features).tolist()
+                        r = requests.post(url,json={'exp':features})
+                        # print(features)
+                        print("TCP {}".format(r.json()))
 
     @set_ev_cls(TimeoutEvent)
     def flow_table(self, ev):
