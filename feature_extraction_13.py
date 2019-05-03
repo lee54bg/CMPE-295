@@ -192,7 +192,6 @@ class FeatureExtraction13(app_manager.RyuApp):
         # Format the data into a list though the data is already in a list
         features = np.array(features).tolist()
         r = requests.post(url,json={'exp':features})
-        # print(features)
         
         print("TCP {}".format(r.json()))
 
@@ -234,8 +233,7 @@ class FeatureExtraction13(app_manager.RyuApp):
             # Format the data into a list though the data is already in a list
             features = np.array(features).tolist()
             r = requests.post(url,json={'exp':features})
-            results = requests.put(url,json={'exp':features})
-
+            
             # print(features)
             print("UDP {}".format(r.json()))
 
