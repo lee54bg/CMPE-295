@@ -58,12 +58,15 @@ def preprocess(kyoto2006):
 def ml_train(x, y, x_train, x_test, y_train, y_test):
     from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 
-    rfc = RandomForestClassifier(criterion='entropy', n_estimators=10, random_state=1, n_jobs=2)
+    from sklearn.linear_model import LogisticRegression
+    lr = LogisticRegression()
+    lr.fit(x_train, y_train)
 
-    rfc.fit(x_train, y_train)
-
+    # rfc = RandomForestClassifier(criterion='entropy', n_estimators=10, random_state=1, n_jobs=2)
+    # rfc.fit(x_train, y_train)
+    
     # Saving model to disk
-    pickle.dump(rfc, open('models/model.pkl','wb'))
+    pickle.dump(lr, open('models/model.pkl','wb'))
     print("Model Trained")
 
 # Regular Deep Learning Artificial Neural Network
