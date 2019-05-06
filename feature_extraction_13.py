@@ -62,6 +62,9 @@ flags = {
     'C': 'CWR',
 }
 
+service = ['other', 'ssh', 'dns', 'rdp', 'smtp', 'snmp', 'http', 'smtp,ssl', 'ssl', 'sip']
+protocol = ["icmp", "tcp", "udp"]
+
 event_queue = queue.Queue()
 
 class FeatureExtraction13(app_manager.RyuApp):
@@ -73,92 +76,36 @@ class FeatureExtraction13(app_manager.RyuApp):
         self.datapaths = {}
         self.mac_to_port = {}
         self.counter = 0
-
+        self.results = {}
         # Threads for extracting and processing packets, collecting
         # flow rule and port statistics, along with installing 
         # flow entries
         self.extract_thread = hub.spawn(self.process_packets)
-        self.monitor_thread = hub.spawn(self.collect_stats)
-        self.table_miss = hub.spawn(self.process_packets)
+        self.table_miss = hub.spawn(self.flow_table)
 
-    # If the OF Switch has been discovered, add that to the list of
-    # switches.  Once the topology has been deleted, remove that
-    # switch from the list of switches
-    @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER, DEAD_DISPATCHER])
-    def _state_change_handler(self, ev):
-        datapath = ev.datapath
+    def flow_table(self):
+        """
+        Once the timeout has been triggered, ensure that the flow entries
+        of the switch has been cleared
+        """
         
-        if ev.state == MAIN_DISPATCHER:
-            if datapath.id not in self.datapaths:
-                self.datapaths[datapath.id] = datapath
-        elif ev.state == DEAD_DISPATCHER:
-            if datapath.id in self.datapaths:
-                del self.datapaths[datapath.id]
-
-    def collect_stats(self):
         while True:
-            for dp in self.datapaths.values():
-                self.req_stats(dp)
-            hub.sleep(10)
+            hub.sleep(120)
+            try:
+                datapath = self.datapath
+                ofproto = datapath.ofproto
+                parser = datapath.ofproto_parser
 
-    def req_stats(self, datapath):
-        self.logger.debug('send stats request: %016x', datapath.id)
-        ofproto = datapath.ofproto
-        parser = datapath.ofproto_parser
+                # Install table-miss flow entry
+                match = parser.OFPMatch()
+                actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
+                                                  ofproto.OFPCML_NO_BUFFER)]
+                self.add_flow(datapath, 0, match, actions)
+                print("Added Flow Entry")
+            except AttributeError:
+                print("Switch not instantiated")
 
-        # Create an OpenFlow Statistics Request Message
-        # and send that to the OVS
-        req = parser.OFPFlowStatsRequest(datapath)
-        datapath.send_msg(req)
-
-        # Create an OpenFlow Port Statistics Request Message
-        # and send that to the OVS
-        req = parser.OFPPortStatsRequest(datapath, 0, ofproto.OFPP_ANY)
-        datapath.send_msg(req)
-
-    # Acquire the Flow Rule statistics
-    @set_ev_cls(ofp_event.EventOFPFlowStatsReply, MAIN_DISPATCHER)
-    def _flow_stats_reply_handler(self, ev):
-        body = ev.msg.body
-
-        self.logger.info('datapath         '
-                         'in-port  eth-dst           '
-                         'out-port packets  bytes')
-        self.logger.info('---------------- '
-                         '-------- ----------------- '
-                         '-------- -------- --------')
-        for stat in sorted([flow for flow in body if flow.priority == 1],
-                           key=lambda flow: (flow.match['in_port'],
-                                             flow.match['eth_dst'])):
-            self.logger.info('%016x %8x %17s %8x %8d %8d',
-                             ev.msg.datapath.id,
-                             stat.match['in_port'], stat.match['eth_dst'],
-                             stat.instructions[0].actions[0].port,
-                             stat.packet_count, stat.byte_count)
-
-    # Acquire the port statistics of the switch
-    @set_ev_cls(ofp_event.EventOFPPortStatsReply, MAIN_DISPATCHER)
-    def _port_stats_reply_handler(self, ev):
-        body = ev.msg.body
-
-        self.logger.info('datapath         port     '
-                         'rx-pkts  rx-bytes rx-error '
-                         'tx-pkts  tx-bytes tx-error')
-        self.logger.info('---------------- -------- '
-                         '-------- -------- -------- '
-                         '-------- -------- --------')
-        for stat in sorted(body, key=attrgetter('port_no')):
-            self.logger.info('%016x %8x %8d %8d %8d %8d %8d %8d',
-                             ev.msg.datapath.id, stat.port_no,
-                             stat.rx_packets, stat.rx_bytes, stat.rx_errors,
-                             stat.tx_packets, stat.tx_bytes, stat.tx_errors)
-
-    def extract_features(self, features):
-        service = ['other', 'ssh', 'dns', 'rdp', 'smtp', 'snmp', 'http', 'smtp,ssl', 'ssl', 'sip']
-        protocol = ["icmp", "tcp", "udp"]
-      
-        url = 'http://128.110.99.129:5000/api'
-        
+    def extract_features(self, features, url):
         srv = features[1]
         prt = features[13]
 
@@ -182,16 +129,17 @@ class FeatureExtraction13(app_manager.RyuApp):
 
         # Format the data into a list though the data is already in a list
         features = np.array(features).tolist()
-        print(features)
-        print(len(features))
+        # print(features)
+        # print(len(features))
         
         r = requests.post(url,json={'exp':features})
-        print(r.json())
+        # print(r.json())
+        return r.json()
 
     def process_packets(self):
         while True:
             if event_queue.empty():
-                hub.sleep(1)
+                hub.sleep(2)
                 continue
             else:
                 event_item = event_queue.get()
@@ -210,43 +158,40 @@ class FeatureExtraction13(app_manager.RyuApp):
                     dst_ip = ip_packet.dst
                      
                     if udp_seg:
+                        src_port = str(udp_seg.src_port)
+                        dst_port = str(udp_seg.dst_port)
                         # Hit the node endpoint for UDP traffic
-                        url = 'http://128.110.99.129:5000/api'
-                        src_port = udp_seg.src_port
-                        dst_port = udp_seg.dst_port
+                        url = 'http://229c8b7b.ngrok.io/slave01/api'
                         features = self.extract_udp(ip_packet, udp_seg, timestamp)
                         print("UDP {}".format(len(features)))
                         
-                        self.extract_features(features)
+                        self.results['src_ip'] = src_ip
+                        self.results['src_port'] = src_port
+                        self.results['dst_ip'] = dst_ip
+                        self.results['dst_port'] = dst_port
+                        self.results['service'] = features[1]
+                        self.results['result'] = self.extract_features(features, url)
+                        print("Done UDP") 
+                        for key, value in self.results.items():
+                            print(key, value)
+
                     elif tcp_seg:
+                        src_port = str(tcp_seg.src_port)
+                        dst_port = str(tcp_seg.dst_port)
                         # Hit the node endpoint for TCP traffic
-                        url = 'http://128.110.99.129:5000/api'
-                        src_port = tcp_seg.src_port
-                        dst_port = tcp_seg.dst_port
+                        url = 'http://229c8b7b.ngrok.io/slave02/api'
                         features = self.extract_tcp(ip_packet, tcp_seg, timestamp)
                         print("TCP {}".format(len(features)))
                         
-                        self.extract_features(features)
-
-    def flow_table(self):
-        """
-        Once the timeout has been triggered, ensure that the flow entries
-        of the switch has been cleared
-        """
-        
-        while True:
-            try:
-                datapath = self.datapath
-                ofproto = datapath.ofproto
-                parser = datapath.ofproto_parser
-
-                # Install table-miss flow entry
-                match = parser.OFPMatch()
-                actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
-                                                  ofproto.OFPCML_NO_BUFFER)]
-                self.add_flow(datapath, 0, match, actions)
-            except AttributeError:
-                print("Switch not instantiated")
+                        self.results['src_ip'] = src_ip
+                        self.results['src_port'] = src_port
+                        self.results['dst_ip'] = dst_ip
+                        self.results['dst_port'] = dst_port
+                        self.results['service'] = features[1]
+                        self.results['result'] = self.extract_features(features, url)
+                        print("Done UDP")
+                        for key, value in self.results.items():
+                            print(key, value)
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
