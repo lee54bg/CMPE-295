@@ -17,6 +17,9 @@ from ryu.lib.packet import ether_types
 from ryu.lib import hub
 from random import randint
 from random import seed
+from kafka import KafkaProducer
+import json
+from json import dumps
 
 import numpy as np
 import requests
@@ -82,6 +85,7 @@ class FeatureExtraction13(app_manager.RyuApp):
         # flow entries
         self.extract_thread = hub.spawn(self.process_packets)
         self.table_miss = hub.spawn(self.flow_table)
+        self.producer = KafkaProducer(bootstrap_servers='130.65.159.69:9092',value_serializer=lambda v: json.dumps(v).encode('utf-8'))
 
     def flow_table(self):
         """
@@ -169,12 +173,12 @@ class FeatureExtraction13(app_manager.RyuApp):
                         self.results['src_port'] = src_port
                         self.results['dst_ip'] = dst_ip
                         self.results['dst_port'] = dst_port
+                        self.results['node'] = "slave01"
                         self.results['service'] = features[1]
                         self.results['result'] = self.extract_features(features, url)
-                        print("Done UDP") 
-                        for key, value in self.results.items():
-                            print(key, value)
-
+                        # print("Done UDP") 
+                        
+                        producer.send('test', results).get(timeout=30)
                     elif tcp_seg:
                         src_port = str(tcp_seg.src_port)
                         dst_port = str(tcp_seg.dst_port)
@@ -187,12 +191,12 @@ class FeatureExtraction13(app_manager.RyuApp):
                         self.results['src_port'] = src_port
                         self.results['dst_ip'] = dst_ip
                         self.results['dst_port'] = dst_port
+                        self.results['node'] = "slave02"
                         self.results['service'] = features[1]
                         self.results['result'] = self.extract_features(features, url)
-                        print("Done UDP")
-                        for key, value in self.results.items():
-                            print(key, value)
-
+                        # print("Done UDP")
+                        
+                        producer.send('test', results).get(timeout=30)
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
         # Install table-miss flow entry

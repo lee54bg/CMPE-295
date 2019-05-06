@@ -14,7 +14,7 @@ data_to_send = queue.Queue()
 def basic_function():
     print("Rest API Started")
     
-    url = 'http://10.0.2.30:5000/api'
+    url = 'http://127.0.0.1:5000/api'
 
     while True:
         if data_to_send.empty():
