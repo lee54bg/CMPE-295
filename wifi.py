@@ -29,9 +29,11 @@ def basic_function():
             print(r.json())
 
 def sniff_80211(packet):
-    
-    if Dot11 in packet:
-        temp_list = [packet[Dot11].ID, len(packet[Dot11])]
+    #print(packet.summary())
+    #packet.show()
+    if Dot11FCS in packet:
+        temp_list = [packet[Dot11FCS].ID, len(packet[Dot11FCS])]
+        print(temp_list)
         data_to_send.put(temp_list)
 
 iface = sys.argv[1]
