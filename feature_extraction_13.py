@@ -20,7 +20,7 @@ from random import seed
 from kafka import KafkaProducer
 import json
 from json import dumps
-
+import datetime
 import numpy as np
 import requests
 
@@ -51,6 +51,7 @@ svclist = {
     69: 'tftp',
     80: 'http',
     53: 'dns'
+
 }
 
 # TCP Flags
@@ -143,13 +144,14 @@ class FeatureExtraction13(app_manager.RyuApp):
     def process_packets(self):
         while True:
             if event_queue.empty():
-                hub.sleep(2)
+                hub.sleep(1)
                 continue
             else:
                 event_item = event_queue.get()
                 msg = event_item.msg
                 timestamp = event_item.timestamp
-                
+                ts = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+                # print(ts)
                 features = None
                 
                 pkt = packet.Packet(msg.data)
@@ -167,8 +169,9 @@ class FeatureExtraction13(app_manager.RyuApp):
                         # Hit the node endpoint for UDP traffic
                         url = 'http://229c8b7b.ngrok.io/slave01/api'
                         features = self.extract_udp(ip_packet, udp_seg, timestamp)
-                        print("UDP {}".format(len(features)))
+                        # print("UDP {}".format(len(features)))
                         
+                        self.results['timestamp'] = ts # timestamp
                         self.results['src_ip'] = src_ip
                         self.results['src_port'] = src_port
                         self.results['dst_ip'] = dst_ip
@@ -177,16 +180,16 @@ class FeatureExtraction13(app_manager.RyuApp):
                         self.results['service'] = features[1]
                         self.results['result'] = self.extract_features(features, url)
                         # print("Done UDP") 
-                        
-                        producer.send('test', results).get(timeout=30)
+                        self.producer.send('test', self.results).get(timeout=30)
                     elif tcp_seg:
                         src_port = str(tcp_seg.src_port)
                         dst_port = str(tcp_seg.dst_port)
                         # Hit the node endpoint for TCP traffic
                         url = 'http://229c8b7b.ngrok.io/slave02/api'
                         features = self.extract_tcp(ip_packet, tcp_seg, timestamp)
-                        print("TCP {}".format(len(features)))
+                        # print("TCP {}".format(len(features)))
                         
+                        self.results['timestamp'] = ts # timestamp
                         self.results['src_ip'] = src_ip
                         self.results['src_port'] = src_port
                         self.results['dst_ip'] = dst_ip
@@ -195,8 +198,8 @@ class FeatureExtraction13(app_manager.RyuApp):
                         self.results['service'] = features[1]
                         self.results['result'] = self.extract_features(features, url)
                         # print("Done UDP")
-                        
-                        producer.send('test', results).get(timeout=30)
+                        self.producer.send('test', self.results).get(timeout=30)
+
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
         # Install table-miss flow entry
@@ -298,12 +301,12 @@ class FeatureExtraction13(app_manager.RyuApp):
     def extract_tcp(self, packet, tcp_seg, timestamp):
         src = packet.src
         dst = packet.dst
-        src_port = str(tcp_seg.src_port)
-        dst_port = str(tcp_seg.dst_port)
+        src_port = tcp_seg.src_port
+        dst_port = tcp_seg.dst_port
         
         # unique connection = sourceIP+SourcePort+DestinationIP
-        uniq = src+':'+src_port+':'+dst
-        dup = dst+':'+dst_port+':'+src
+        uniq = src+':'+str(src_port)+':'+dst
+        dup = dst+':'+str(dst_port)+':'+src
         
         cursvc = {}
         oldkey = ''
@@ -604,8 +607,8 @@ class FeatureExtraction13(app_manager.RyuApp):
     def extract_udp(self, packet, udp_seg, timestamp):
         src = packet.src
         dst = packet.dst
-        src_port = str(udp_seg.src_port)
-        dst_port = str(udp_seg.dst_port)
+        src_port = udp_seg.src_port
+        dst_port = udp_seg.dst_port
         
         #unique connection = sourceIP+SourcePort+DestinationIP
         uniq = src+':'+str(src_port)+':'+dst
@@ -679,7 +682,6 @@ class FeatureExtraction13(app_manager.RyuApp):
             
             temp_list = [udp_connections[uniq][3],udp_connections[uniq][7],udp_connections[uniq][5],udp_connections[uniq][6],udp_connections[uniq][8],udp_connections[uniq][9],0,0,udp_connections[uniq][13],udp_connections[uniq][14],udp_connections[uniq][15],0,0,udp_connections[uniq][18]]
             return temp_list
-            # writer.writerow(temp_list)
         elif uniq in udp_connections:
             
             #packet count
@@ -745,8 +747,6 @@ class FeatureExtraction13(app_manager.RyuApp):
             
             temp_list = [udp_connections[uniq][3],udp_connections[uniq][7],udp_connections[uniq][5],udp_connections[uniq][6],udp_connections[uniq][8],udp_connections[uniq][9],0,0,udp_connections[uniq][13],udp_connections[uniq][14],udp_connections[uniq][15],0,0,udp_connections[uniq][18]]
             return temp_list
-            # writer.writerow(temp_list)
-          
         elif dup in udp_connections:
             #packet count
             udp_connections[dup][2] += 1
@@ -812,4 +812,3 @@ class FeatureExtraction13(app_manager.RyuApp):
             
             temp_list = [udp_connections[dup][3],udp_connections[dup][7],udp_connections[dup][5],udp_connections[dup][6],udp_connections[dup][8],udp_connections[dup][9],0,0,udp_connections[dup][13],udp_connections[dup][14],udp_connections[dup][15],0,0,udp_connections[dup][18]]
             return temp_list
-            # writer.writerow(temp_list)
