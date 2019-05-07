@@ -29,11 +29,17 @@ def basic_function():
             print(r.json())
 
 def sniff_80211(packet):
-    #print(packet.summary())
-    #packet.show()
-    if Dot11FCS in packet:
+    # Print statements are for debugging purposes
+    # print(packet.summary())
+    # packet.show()
+    
+    if Dot11 in packet:
+        temp_list = [packet[Dot11].ID, len(packet[Dot11])]
+        # print(temp_list)
+        data_to_send.put(temp_list)
+    elif Dot11FCS in packet:
         temp_list = [packet[Dot11FCS].ID, len(packet[Dot11FCS])]
-        print(temp_list)
+        # print(temp_list)
         data_to_send.put(temp_list)
 
 iface = sys.argv[1]
@@ -44,12 +50,11 @@ if len(sys.argv) == 1:
 else:
     try:
         import threading
-  
+
         t1 = threading.Thread(target=basic_function)
         t1.start()
 
         sniff(prn=sniff_80211, iface=iface)
-    
+
     except KeyboardInterrupt:
         print("\nTerminating Program...")
-
