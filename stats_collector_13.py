@@ -8,6 +8,7 @@ from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, DEAD_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.lib import hub
+# from kafka import KafkaProducer
 
 class StatsMonitor13(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
@@ -15,6 +16,7 @@ class StatsMonitor13(app_manager.RyuApp):
         self.datapaths = {}
         self.monitor_thread = hub.spawn(self._monitor)
         self.statistics = {}
+        # self.producer = KafkaProducer(bootstrap_servers='130.65.159.69:9092',value_serializer=lambda v: json.dumps(v).encode('utf-8'))
     
     @set_ev_cls(ofp_event.EventOFPStateChange,
                 [MAIN_DISPATCHER, DEAD_DISPATCHER])
@@ -67,5 +69,7 @@ class StatsMonitor13(app_manager.RyuApp):
             self.statistics['tx_bytes'] = stat.tx_bytes
             self.statistics['tx_errors'] = stat.tx_errors
 
+            # self.producer.send('test', self.statistics).get(timeout=30)
+            
             for key,value in statistics.items():
                 print(key, value)
