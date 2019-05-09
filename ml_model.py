@@ -100,4 +100,5 @@ if __name__ == "__main__":
 
     x, y, x_train, x_test, y_train, y_test = preprocess(kyoto2006)
 
-    ml_train(x, y, x_train, x_test, y_train, y_test)
+    # ml_train(x, y, x_train, x_test, y_train, y_test)
+    dl_train(x, y, x_train, x_test, y_train, y_test)

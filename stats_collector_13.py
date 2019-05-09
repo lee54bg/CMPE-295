@@ -8,7 +8,9 @@ from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, DEAD_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.lib import hub
-# from kafka import KafkaProducer
+from kafka import KafkaProducer
+import json
+from json import dumps
 
 class StatsMonitor13(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
@@ -16,7 +18,7 @@ class StatsMonitor13(app_manager.RyuApp):
         self.datapaths = {}
         self.monitor_thread = hub.spawn(self._monitor)
         self.statistics = {}
-        # self.producer = KafkaProducer(bootstrap_servers='130.65.159.69:9092',value_serializer=lambda v: json.dumps(v).encode('utf-8'))
+        self.producer = KafkaProducer(bootstrap_servers='130.65.159.69:9092',value_serializer=lambda v: json.dumps(v).encode('utf-8'))
     
     @set_ev_cls(ofp_event.EventOFPStateChange,
                 [MAIN_DISPATCHER, DEAD_DISPATCHER])
@@ -49,18 +51,7 @@ class StatsMonitor13(app_manager.RyuApp):
     def _port_stats_reply_handler(self, ev):
         body = ev.msg.body
 
-        self.logger.info('datapath         port     '
-                         'rx-pkts  rx-bytes rx-error '
-                         'tx-pkts  tx-bytes tx-error')
-        self.logger.info('---------------- -------- '
-                         '-------- -------- -------- '
-                         '-------- -------- --------')
         for stat in sorted(body, key=attrgetter('port_no')):
-            self.logger.info('%016x %8x %8d %8d %8d %8d %8d %8d',
-                             ev.msg.datapath.id, stat.port_no,
-                             stat.rx_packets, stat.rx_bytes, stat.rx_errors,
-                             stat.tx_packets, stat.tx_bytes, stat.tx_errors)
-
             self.statistics['port_no'] = stat.port_no
             self.statistics['rx_packets'] = stat.rx_packets
             self.statistics['rx_bytes'] = stat.rx_bytes
@@ -69,7 +60,7 @@ class StatsMonitor13(app_manager.RyuApp):
             self.statistics['tx_bytes'] = stat.tx_bytes
             self.statistics['tx_errors'] = stat.tx_errors
 
-            # self.producer.send('test', self.statistics).get(timeout=30)
+            self.producer.send('openvswitch', self.statistics).get(timeout=30)
             
-            for key,value in statistics.items():
+            for key,value in self.statistics.items():
                 print(key, value)
