@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-df = pd.read_csv('AWID-ATK-R-Trn/1.csv', header=0)
+df = pd.read_csv('dataset/1.csv', header=0)
 df = df.drop(df.columns[0], axis=1)
 df = df.drop(columns=["wlan_fc_retry", "wlan_fc_type", "wlan_fc_subtype", 'wlan_fc_ds', 'wlan_fc_frag', 'data_len'])
 df = df.fillna(0)
